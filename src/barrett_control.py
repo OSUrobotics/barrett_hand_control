@@ -29,7 +29,7 @@ class control(object):
             self.Trans_matrix = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,2.5],[0,0,0,1]])
             self.obj.SetTransform(self.Trans_matrix)
             while not rospy.is_shutdown():
-                n=1
+               n=1
         except KeyboardInterrupt, e:
             print e
         finally:
