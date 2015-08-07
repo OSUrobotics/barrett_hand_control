@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from Tkinter import *
 import rospy
 from std_msgs.msg import Float32MultiArray
