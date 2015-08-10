@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<Kinbody name="Coil1">
+    <link name="base">
+        <visual>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <geometry>
+                <mesh filename="Coil1.STL"/>
+            </geometry>
+        </visual>
+    </link>
+</Kinbody>
