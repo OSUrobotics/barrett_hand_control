@@ -6,6 +6,7 @@ import numpy as np
 from std_msgs.msg import Float32MultiArray
 import sys
 import rospkg
+import time
 
 
 class control(object):
@@ -13,9 +14,7 @@ class control(object):
         rospy.init_node('control',anonymous = True)
         self.path = rospkg.RosPack().get_path('barrett_hand_control')
 	self.env = None
-	
-        
-#        self.sub = rospy.Subscriber("control_slider_values", Float32MultiArray, self.updater)
+
 
     def generate_environment(self):
         try:
@@ -26,7 +25,7 @@ class control(object):
             self.env.Add(self.obj)
             self.env.SetViewer('qtcoin')
             self.T_robot = self.robot.GetDOFValues()
-            self.Trans_matrix = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,2.5],[0,0,0,1]])
+            self.Trans_matrix = np.array([[1,0,0,0],[0,1,0,-0.5],[0,0,1,1.5],[0,0,0,1]])
             self.obj.SetTransform(self.Trans_matrix)
             while not rospy.is_shutdown():
                n=1
