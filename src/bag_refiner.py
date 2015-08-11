@@ -9,7 +9,7 @@ import numpy as np
 class combiner(object):
     def __init__(self):
         rospy.init_node('combiner',anonymous = True)
-        self.vector = np.zeros([17])
+        self.vector = np.zeros([18])
         self.pub = rospy.Publisher('control_slider_values',Float32MultiArray,queue_size=1)
         self.sub_hand = rospy.Subscriber('/bhand/joint_states', JointState, self.subscribe_hand)
         self.sub_arm = rospy.Subscriber('/wam_jnts', JointState, self.subscribe_wam)
@@ -23,6 +23,7 @@ class combiner(object):
         self.vector[14] = joints_ang_hand.position[5]
         self.vector[15] = joints_ang_hand.position[2]
         self.vector[16] = joints_ang_hand.position[6]
+        self.vector[17] = 0
 
     def subscribe_wam(self, joints_ang_wam):
         self.vector[0] = joints_ang_wam.position[0]
@@ -31,7 +32,7 @@ class combiner(object):
         self.vector[3] = joints_ang_wam.position[3]
         self.vector[4] = joints_ang_wam.position[4]
         self.vector[5] = joints_ang_wam.position[5]
-        self.vector[6] = -1 * joints_ang_wam.position[6]
+        self.vector[6] = joints_ang_wam.position[6]
     def publishvalues(self):
         while not rospy.is_shutdown():
             self.pub.publish(data = self.vector)

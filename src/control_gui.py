@@ -20,6 +20,7 @@ class Application(Frame):
         Grid.rowconfigure(master,0,weight=1)
         Grid.columnconfigure(master,0,weight=1)
         self.CreateWidgets()
+        self.flag = 0
         self.Publish_values()
 
     def CreateWidgets(self):
@@ -86,11 +87,18 @@ class Application(Frame):
         self.master.slider_17.grid(row = 26, column = 0,sticky=N+S+E+W)
         self.master.label_17 = Label(self, text = "Finger 3: Distal joint")
         self.master.label_17.grid(row=27, column = 0, sticky=N+S+E+W)
+        self.master.button = Button(self, text="click to move spare hand with arm other wise double click to lock hand at single position", command = self.toggle_bit)
+        self.master.button.grid(row = 28, column = 0,sticky = N+S+E+W)
 # Note: Slider 8, 9 and 13 are removed from grid deliberately because 8 and 9 doesn't have any effect on the wam and 13 is for finger spread so we have combined the spread of each finger as robot doesn't allow you to do that
+    def toggle_bit(self):
+        if self.flag==0:
+            self.flag = 1
+        else:
+            self.flag = 0
     def Publish_values(self):
         try:
             while not rospy.is_shutdown():
-                vector = [self.master.slider_1.get(),self.master.slider_2.get(),self.master.slider_3.get(),self.master.slider_4.get(),self.master.slider_5.get(),self.master.slider_6.get(),self.master.slider_7.get(),self.master.slider_8.get(),self.master.slider_9.get(),self.master.slider_10.get(),self.master.slider_11.get(),self.master.slider_12.get(),self.master.slider_10.get(),self.master.slider_14.get(),self.master.slider_15.get(),self.master.slider_16.get(),self.master.slider_17.get()]
+                vector = [self.master.slider_1.get(),self.master.slider_2.get(),self.master.slider_3.get(),self.master.slider_4.get(),self.master.slider_5.get(),self.master.slider_6.get(),self.master.slider_7.get(),self.master.slider_8.get(),self.master.slider_9.get(),self.master.slider_10.get(),self.master.slider_11.get(),self.master.slider_12.get(),self.master.slider_10.get(),self.master.slider_14.get(),self.master.slider_15.get(),self.master.slider_16.get(),self.master.slider_17.get(),self.flag]
                 self.master.pub.publish(data=vector)
                 self.update()
 
