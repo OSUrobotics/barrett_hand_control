@@ -29,7 +29,7 @@ class Application(Frame):
         for columns in xrange(1):
             Grid.columnconfigure(self, columns, weight=1)
         self.master.title("barrett hand control")
-        self.master.slider_1 = Scale(self, from_=-2.6, to=2.6, resolution=0.01,orient = HORIZONTAL) 
+        self.master.slider_1 = Scale(self, from_=-2.6, to=2.6, resolution=0.001,orient = HORIZONTAL) 
         self.master.slider_1.grid(row = 0, column = 0,sticky=N+S+E+W)
         self.master.label_1 = Label(self, text = "Base yaw Joint")       
         self.master.label_1.grid(row=1, column = 0, sticky=N+S+E+W)
