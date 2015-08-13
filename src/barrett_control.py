@@ -22,8 +22,10 @@ class control(object):
             self.env.Load(self.path+'/src/barrett_wam.dae')
             self.robot = self.env.GetRobots()[0]
             self.hand = self.env.ReadRobotXMLFile(self.path+'/src/bhand.dae')
+            self.wam = self.env.ReadRobotXMLFile(self.path+'/src/wam.dae')
 #            self.robot.SetDOFValues([0.7942003011703491, -1.9751428365707397, 1.642993688583374, 1.3289387226104736, -1.3093395233154297, 0.20392456650733948, 0.12288285791873932, 0.0, 0.0, 0.02515728399157524, 1.2185022830963135, 0.4061265289783478, 0.02515728399157524, 1.1969958543777466, 0.39948949217796326, 1.0065982341766357, 0.5453813076019287])
             self.env.Add(self.hand)
+            self.env.Add(self.wam)
             self.obj = self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
@@ -34,6 +36,9 @@ class control(object):
             self.obj.SetTransform(self.Trans_matrix)
             self.T_robot = self.robot.GetLinkTransformations()[9:23]
             self.hand.SetLinkTransformations(self.T_robot)
+            self.T_wam = self.robot.GetLinkTransformations()[0:9]
+            self.T_wam.append(self.robot.GetLinkTransformations()[-1])
+            self.wam.SetLinkTransformations(self.T_wam)
             while not rospy.is_shutdown():
                     N=1
 
@@ -48,6 +53,9 @@ class control(object):
         if self.flag == 1:
             self.T_robot = self.robot.GetLinkTransformations()[9:23]
             self.hand.SetLinkTransformations(self.T_robot)
+            self.T_wam = self.robot.GetLinkTransformations()[0:9]
+            self.T_wam.append(self.robot.GetLinkTransformations()[-1])
+            self.wam.SetLinkTransformations(self.T_wam)
         self.robot.SetDOFValues(slider_values.data[0:17])
     
     def updater_part(self,transform_values):
