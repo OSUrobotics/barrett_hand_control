@@ -13,7 +13,7 @@ class combiner(object):
         self.master = Tk()
         self.pub = rospy.Publisher('control_slider_values',Float32MultiArray,queue_size=1)
         self.sub_hand = rospy.Subscriber('/bhand/joint_states', JointState, self.subscribe_hand)
-        self.sub_arm = rospy.Subscriber('/wam_grasp_capture/recording/joint_states', JointState, self.subscribe_wam)
+        self.sub_arm = rospy.Subscriber('/wam/joint_states', JointState, self.subscribe_wam)
         self.vector[17] = 0
         self.transform_hand()
         self.publishvalues()
