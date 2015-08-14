@@ -23,10 +23,11 @@ class control(object):
             self.robot = self.env.GetRobots()[0]
             self.hand = self.env.ReadRobotXMLFile(self.path+'/src/bhand.dae')
             self.wam = self.env.ReadRobotXMLFile(self.path+'/src/wam.dae')
-#            self.robot.SetDOFValues([0.7942003011703491, -1.9751428365707397, 1.642993688583374, 1.3289387226104736, -1.3093395233154297, 0.20392456650733948, 0.12288285791873932, 0.0, 0.0, 0.02515728399157524, 1.2185022830963135, 0.4061265289783478, 0.02515728399157524, 1.1969958543777466, 0.39948949217796326, 1.0065982341766357, 0.5453813076019287])
+#            self.robot.SetDOFValues([8.29153121e-01, -1.46121848e+00, 2.03694558e+00, 1.35058486e+00, -9.14774418e-01, 5.70182264e-01, 2.35470676e+00, 2.22044605e-16, 2.22044605e-16, 1.56904329e-02, 1.49526310e+00, 4.98535573e-01, 1.56904329e-02, 1.45774198e+00, 4.86576647e-01, 1.29563081e+00, 5.63570201e-01])
+            self.robot.SetDOFValues([0.81366723775863636, -1.5860003709793091, 2.0457030773162836, 1.2624661684036254, -0.89291913509368837, 0.62145200967788694, 2.4271213531494147, 3.1086244689504381e-16, 3.1086244689504381e-16, 0.015690432861447334, 1.4682650566101076, 0.48958203792572014, 0.015690432861447424, 1.4379965782165527, 0.47997848391532927, 1.3054973840713502, 0.53829675912857122])
             self.env.Add(self.hand)
             self.env.Add(self.wam)
-            self.obj = self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/WineGlass.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj = self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
