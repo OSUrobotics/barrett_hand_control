@@ -15,7 +15,7 @@ except getopt.GetoptError:
 
 for opt, arg in opts:
     if opt=="-h":
-        print "Usage: grasp_visualizer.py -i <inputfile.dae> -i <inputfile.csv>"
+        print "Usage: grasp_visualizer.py -d <inputfile.dae> -c <inputfile.csv>"
         sys.exit(2)
     elif opt in ("-d","--idae"):
         inputdae = arg
