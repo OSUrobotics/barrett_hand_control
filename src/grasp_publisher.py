@@ -1,4 +1,5 @@
-#/usr/bin/python
+#!/usr/bin/python
+
 import rospy
 from wam_msgs.msg import HandCommand
 from std_msgs.msg import Empty
@@ -6,19 +7,25 @@ from math import pi
 import sys,getopt
 import csv
 
-
-class JointPub:
-    def __init__(self):
+class JointPub(object):
+    def __init__(self,vec):
         rospy.init_node('JointPub',anonymous = True)
         self.pub = rospy.Publisher("/bhand/hand_cmd", HandCommand, queue_size=1)
         self.hand_command_template = HandCommand()
+        print "working"
+        self.publish_jnts(vec)
 
     def publish_jnts(self,joint_list):
         self.hand_command_template.f1 = joint_list[10]
         self.hand_command_template.f2 = joint_list[13]
         self.hand_command_template.f3 = joint_list[15]
         self.hand_command_template.spread = joint_list[9]
-        self.pub.publish(self.hand_command_template)
+        print self.hand_command_template
+        try:
+            while not rospy.is_shutdown():
+                self.pub.publish(self.hand_command_template)
+        except rospy.exceptions.ROSInterruptException:
+            print "closing node"
 
 if __name__=="__main__":
     argv = sys.argv[1:]
@@ -49,13 +56,32 @@ if __name__=="__main__":
             row_float.append(float(x))
         vector.append(row_float)
             
-    jnt_pub = JointPub()
     vals = vector[2]
+
+    def publish_joint_state():
+        global vals
+        try:
+            JointPub(vals)
+            valid_entry = 0
+            while not valid_entry:
+                inp = raw_input("Do you want to try another grasp (y/n)")
+                if inp == 'y':
+                    valid_entry = 1
+                    switch_grasp()
+                elif inp == 'n':
+                    valid_entry = 1
+                    print "exiting"
+                    sys.exit(2)
+                else:
+                    print "Enter a valid entry"
+        except:
+            pass
+
     def switch_grasp():
         global vals
         valid_entry = 0
         while not valid_entry:
-            inp = raw_input( "1: Highest Range of the grasp \n 2: Lowest Range of grasp \n 3: 1st new grasp \n 4: 2nd new grasp \n Enter your choice : \n")
+            inp = raw_input( " 1: Highest Range of the grasp \n 2: Lowest Range of grasp \n 3: 1st new grasp \n 4: 2nd new grasp \n Enter your choice : \n")
             if inp=='1':
                 vals=vector[0]
                 valid_entry = 1
@@ -70,24 +96,8 @@ if __name__=="__main__":
                 valid_entry=1
             else:
                 print "please enter a valid entry from 1-4: "
-    try:
-        while True:
-            global vals
-            jnt_pub.publish_jnts(vals)
-    except KeyboardInterrupt:
-        valid_entry = 0
-        while not valid_entry:
-            inp = raw_input("Do you want to try another grasp (y/n)")
-            if inp == 'y':
-                valid_entry = 1
-                switch_grasp()
-            elif inp == 'n':
-                valid_entry = 1
-                print "exiting"
-                sys.exit(2)
-            else:
-                print "Enter a valid entry"
 
-
-
+            if valid_entry==1:
+                publish_joint_state()
+    switch_grasp()
 
