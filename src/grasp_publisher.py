@@ -2,6 +2,7 @@
 
 import rospy
 from wam_msgs.msg import HandCommand
+from wam_srvs.srv import JointMove
 from std_msgs.msg import Empty
 from math import pi
 import sys,getopt
