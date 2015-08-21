@@ -8,6 +8,8 @@ import sys,getopt
 import csv
 import threading
 
+# I have to caliberate the joint state to hand commands 
+
 class JointPub(object):
     def __init__(self):
         rospy.init_node('JointPub',anonymous = True,disable_signals = True)
