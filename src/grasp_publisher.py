@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 import rospy
-from wam_msgs.msg import HandCommand
-from wam_srvs.srv import JointMove
+from barrett_hand_control.msg import HandCommand
+from barrett_hand_control.srv import JointMove
 from std_msgs.msg import Empty
 from math import pi
 import sys,getopt
@@ -17,12 +17,21 @@ class JointPub(object):
         self.pub = rospy.Publisher("/bhand/hand_cmd", HandCommand, queue_size=1)
         self.hand_command_template = HandCommand()
 
+
     def publish_jnts(self,joint_list):
         self.hand_command_template.f1 = joint_list[10]
         self.hand_command_template.f2 = joint_list[13]
         self.hand_command_template.f3 = joint_list[15]
         self.hand_command_template.spread = joint_list[9]
         self.pub.publish(self.hand_command_template)
+    
+    def service_client(self):
+        rospy.wait_for_service('JointMove')
+        try:
+            jointmove = rospy.ServiceProxy('JointMove',float32)
+            print jointmove
+        except rospy.ServiceException, e:
+            print "Service call failed: %s"%e
 
 if __name__=="__main__":
     argv = sys.argv[1:]
@@ -56,7 +65,7 @@ if __name__=="__main__":
     vals = vector[2]
     jnts_obj = JointPub()
     def publish_joint_state():
-        global vals
+        global vals,jnts_obj
         try:
             while not rospy.is_shutdown():
                 jnts_obj.publish_jnts(vals)
@@ -83,8 +92,19 @@ if __name__=="__main__":
             print "\n"
             rospy.signal_shutdown("program killed")
 
+    def run_service_client():
+        global jnts_obj
+        try:
+            while not rospy.is_shutdown():
+                jnts_obj.service_client()
+        except rospy.ROSException:
+            rospy.signal_shutdown("program killed")
+            print "\n"
+
     t_1 = threading.Thread(name='switch_grasp', target=switch_grasp)
     t_2 = threading.Thread(name='publish_joint_state', target = publish_joint_state)
+    t_3 = threading.Thread(name='service_client', target = run_service_client)
     t_1.start()
     t_2.start()
+    t_3.start()
 
