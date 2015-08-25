@@ -12,7 +12,6 @@ import time
 class control(object):
     def __init__(self):
         self.path = rospkg.RosPack().get_path('barrett_hand_control')
-	self.env = None
         self.flag = 0
         self.env = Environment()
         self.env.Load(self.path+'/src/barrett_wam.dae')
@@ -63,29 +62,6 @@ class control(object):
 
         self.obj.SetTransform(transform)
 
-    def convex_decomposition(self,points_mat):
-        self.cdmodel = databases.convexdecomposition.ConvexDecompositionModel(self.robot)
-        if not self.cdmodel.load():
-            self.cdmodel.autogenerate()
-        self.ab = self.robot.ComputeAABB()
-        self.samplingdelta = numpy.linalg.norm(self.ab.extents())/30.0
-        self.boxmin = self.ab.pos()-self.ab.extents()
-        self.boxmax = self.ab.pos()+self.ab.extents()
-        self.X,self.Y,self.Z = numpy.mgrid[self.boxmin[0]:self.boxmax[0]:self.samplingdelta,self.boxmin[1]:self.boxmax[1]:self.samplingdelta,self.boxmin[2]:self.boxmax[2]:self.samplingdelta]
-        self.points = numpy.c_[self.X.flat,self.Y.flat,self.Z.flat]
-        self.inside = self.cdmodel.testPointsInside(self.points)
-        self.plottedpoints = self.points[numpy.flatnonzero(self.inside),:]
-#        self.plottedpoints[:,1] += self.ab.extents()[1]*2
-        self.points_mat_length = len(points_mat)
-        print "running"
-        self.points = numpy.reshape(points_mat,(self.points_mat_length/3,3))
-        self.plot = self.env.plot3(self.plottedpoints,2)
-        for i in range(self.points_mat_length/3):
-            try:
-                self.plottedpoints = np.delete(self.plottedpoints,self.points[i],axis=0)
-            except ValueError:
-                pass
-
         
 
 def main():
@@ -93,8 +69,6 @@ def main():
     rospy.init_node('control',anonymous = True)
     ctrl.sub = rospy.Subscriber("control_slider_values", Float32MultiArray, ctrl.updater)
     ctrl.sub_trans = rospy.Subscriber("slider_for_transformation",Float32MultiArray, ctrl.updater_part)
-    #ctrl.sub_cd = rospy.Subscriber("points",Float32MultiArray,ctrl.convex_decomposition)
-    ctrl.convex_decomposition(numpy.array([1,2,3]))
     ctrl.generate_environment()
 
 if __name__=="__main__":
