@@ -78,7 +78,7 @@ class control(object):
 #        self.plottedpoints[:,1] += self.ab.extents()[1]*2
         self.points_mat_length = len(points_mat)
         self.points = numpy.reshape(points_mat,(self.points_mat_length/3,3))
-        self.plot = self.env.plot3(self.plottedpoints,2)
+        self.plot = self.env.plot3(self.plottedpoints,2)#,[150,150,150])#colour values [R,G,B]
         for i in range(self.points_mat_length/3):
             try:
                 self.plottedpoints = np.delete(self.plottedpoints,self.points[i],axis=0)
@@ -92,8 +92,8 @@ def main():
     rospy.init_node('control',anonymous = True)
     ctrl.sub = rospy.Subscriber("control_slider_values", Float32MultiArray, ctrl.updater)
     ctrl.sub_trans = rospy.Subscriber("slider_for_transformation",Float32MultiArray, ctrl.updater_part)
-    ctrl.sub_cd = rospy.Subscriber("points",Float32MultiArray,ctrl.convex_decomposition)
-    #ctrl.convex_decomposition(numpy.array([1,2,3]))
+    #ctrl.sub_cd = rospy.Subscriber("points",Float32MultiArray,ctrl.convex_decomposition)
+    ctrl.convex_decomposition(numpy.array([1,2,3]))
     ctrl.generate_environment()
 
 if __name__=="__main__":

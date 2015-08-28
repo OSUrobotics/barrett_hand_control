@@ -16,7 +16,10 @@ class control(object):
         self.env = Environment()
         self.env.Load(self.path+'/src/barrett_wam.dae')
         self.robot = self.env.GetRobots()[0]
+        self.robot.SetTransform([[1,0,0,0],[0,1,0,0],[0,0,1,-1.16],[0,0,0,1]])
         self.env.SetViewer('qtcoin')
+        self.pub = rospy.Publisher('hand_transformation', Float32MultiArray,queue_size = 1)
+        self.pub_obj = rospy.Publisher('obj_transformation',Float32MultiArray,queue_size = 1)
 
     def generate_environment(self):
         try:
@@ -26,22 +29,46 @@ class control(object):
             self.robot.SetDOFValues([0.81366723775863636, -1.5860003709793091, 2.0457030773162836, 1.2624661684036254, -0.89291913509368837, 0.62145200967788694, 2.4271213531494147, 3.1086244689504381e-16, 3.1086244689504381e-16, 0.015690432861447334, 1.4682650566101076, 0.48958203792572014, 0.015690432861447424, 1.4379965782165527, 0.47997848391532927, 1.3054973840713502, 0.53829675912857122])
             self.env.Add(self.hand)
             self.env.Add(self.wam)
+#            self.env.plot3(points =np.array((1, 0, 0 )))
+#            self.env.plot3(points =np.array((0,0.5,0)))
             self.obj = self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
-            self.Table.SetTransform([[0.0007963267271406949, -0.9999997019767761, 0.0, -0.8919000029563904], [0.9999997019767761, 0.0007963267271406949, 0.0, 0.3614000082015991], [-0.0, 0.0, 1.0, 1.0058000087738037], [0.0, 0.0, 0.0, 0.0]])
-            self.Trans_matrix = np.array([[-1.0, 3.140000104904175, -3.140000104904175, -0.71670001745224],[ 0.0, 0.0, -0.8199999928474426, -0.11140000075101852], [0.0, 0.0, 0.0, 1.0211999416351318], [0.0, 0.0, 0.0, 0.0]])
+            self.Table.SetTransform([[0.0007963267271406949, -0.9999997019767761, 0.0, -0.8919000029563904], [0.9999997019767761, 0.0007963267271406949, 0.0, 0.3614000082015991], [-0.0, 0.0, 1.0, 1.0058000087738037-1.16], [0.0, 0.0, 0.0, 0.0]])
+            self.Trans_matrix = np.array([[-1.0, 3.140000104904175, -3.140000104904175, -0.71670001745224],[ 0.0, 0.0, -0.8199999928474426, -0.11140000075101852], [0.0, 0.0, 0.0, 1.0211999416351318-1.16], [0.0, 0.0, 0.0, 0.0]])
             self.obj.SetTransform(self.Trans_matrix)
             self.T_robot = self.robot.GetLinkTransformations()[9:23]
             self.hand.SetLinkTransformations(self.T_robot)
             self.T_wam = self.robot.GetLinkTransformations()[0:9]
             self.T_wam.append(self.robot.GetLinkTransformations()[-1])
             self.wam.SetLinkTransformations(self.T_wam)
-            while not rospy.is_shutdown():
-                    N=1
 
-        except KeyboardInterrupt, e:
+
+            # Remove the following to visualize complete setup
+            self.env.Remove(self.hand)
+            self.env.Remove(self.Table)
+            self.env.Remove(self.wam)
+            self.env.Remove(self.obj)
+            while not rospy.is_shutdown():
+                hand_transformation_vec = []
+                vec = self.robot.GetLinkTransformations()[9:23]
+                for i in range(len(vec)):
+                    temp_vec = []
+                    temp_vec = vec[i].reshape(-1)
+                    temp_vec = temp_vec.tolist()
+                    hand_transformation_vec += temp_vec
+                hand_transformation_vec.append(0)
+                if self.flag==1:
+                    hand_transformation_vec[-1] = 1
+                else:
+                    hand_transformation_vec[-1] = 0
+                self.pub.publish(data=hand_transformation_vec)
+                vec_obj = self.obj.GetTransform()
+                vec_obj = np.array(vec_obj)
+                obj_transformation_vec = vec_obj.reshape(-1)
+                self.pub_obj.publish(data = obj_transformation_vec)
+        except KeyboardInterrupt,e:
             print e
         finally:
             print 'exiting'
@@ -62,7 +89,6 @@ class control(object):
 
         self.obj.SetTransform(transform)
 
-        
 
 def main():
     ctrl = control()
