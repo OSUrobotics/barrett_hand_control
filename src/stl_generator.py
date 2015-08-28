@@ -3,12 +3,12 @@
 from openravepy import *
 import rospy
 import numpy as np
-
+import csv
 
 class stl_generator(object):
     def __init__(self):
         self.env = Environment()
-        self.env.Load("barrett_wam.dae")
+        self.env.Load("/home/saurabh/stl_reader/obj6_subj7_grasp6.dae")
         self.env.SetViewer('qtcoin')
         self.robot = self.env.GetRobots()[0]
         self.vertices = np.array([[0,0,0]])
@@ -28,6 +28,13 @@ class stl_generator(object):
             pt_handles = self.env.plot3(self.vertices,4)
             print self.vertices
             print "shape",self.vertices.shape
+            filename = open('obj6_sub7_grasp6.csv','wb')
+            writer = csv.writer(filename, delimiter=',')
+            writer.writerow(['x','y','z'])
+            for row in self.vertices:
+                writer.writerow(row)
+
+            filename.close()
             while not rospy.is_shutdown():
                 n=1
         except KeyboardInterrupt, e:
