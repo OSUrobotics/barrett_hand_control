@@ -19,6 +19,7 @@ class JointPub(object):
 
 
     def publish_jnts(self,joint_list):
+
         self.hand_command_template.f1 = joint_list[10]
         self.hand_command_template.f2 = joint_list[13]
         self.hand_command_template.f3 = joint_list[15]
@@ -26,9 +27,9 @@ class JointPub(object):
         self.pub.publish(self.hand_command_template)
     
     def service_client(self):
-        rospy.wait_for_service('JointMove')
+        rospy.wait_for_service('wam_srvs/JointMove')
         try:
-            jointmove = rospy.ServiceProxy('JointMove',float32)
+            jointmove = rospy.ServiceProxy('wam_srvs/JointMove',float32)
             print jointmove
         except rospy.ServiceException, e:
             print "Service call failed: %s"%e
@@ -69,7 +70,7 @@ if __name__=="__main__":
         try:
             while not rospy.is_shutdown():
                 jnts_obj.publish_jnts(vals)
-        except rospy.ROSException:
+        except EOFError:
             rospy.signal_shutdown("program Killed")
             print "\n"
 
