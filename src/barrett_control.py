@@ -67,6 +67,7 @@ class control(object):
             self.color_vector = np.divide(self.color_vector,255.0)
             point_file = open(self.path+'/src/MasterMatrix.txt','rb')
             string = point_file.read()
+            point_file.close()
             string = string.replace(',','\n')
             vec = string.split()
             empty_vec = []
