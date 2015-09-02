@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import threading
 from openravepy import *
 import rospy
 import numpy as np
@@ -11,6 +10,8 @@ import time
 import csv
 import os
 import threading
+from Tkinter import *
+
 
 class control(object):
     def __init__(self):
@@ -29,19 +30,32 @@ class control(object):
         self.sub_number = 7
         self.grasp_set = 7
         self.extreme = 0
+        self.master = Tk()
         self.is_data_loaded = 0
         self.color_vector = np.array([])
         self.plot_point_cloud = None
         self.transform_points = np.array([])
+        self.is_optimal = False
+        self.is_optimal_num =1 
 
     def User_input(self,snap_shot):
         self.obj_number = snap_shot.obj_num
         self.sub_number = snap_shot.sub_num
         self.grasp_set = snap_shot.grasp_num
         self.extreme = snap_shot.extreme_num
+        try:
+            self.is_optimal = snap_shot.is_optimal
+        except:
+            pass
+        if self.is_optimal:
+            self.is_optimal_num = snap_shot.is_optimal_num
+            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.is_optimal_num)+'_pointcloud.csv')
+        else:
+            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_pointcloud.csv')
+
         self.point_cloud = []
         try:
-            with open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_pointcloud.csv','rb') as csvfile:
+            with open(filename,'rb') as csvfile:
                 pointcloud = csv.reader(csvfile, delimiter=',', quotechar = '|')                                            
                 for row in pointcloud:                                                                                      
                     row_float = []                                                                                          
@@ -51,7 +65,17 @@ class control(object):
             self.point_cloud = np.array(self.point_cloud)
             self.color_vector = self.point_cloud[:,3:6]
             self.color_vector = np.divide(self.color_vector,255.0)
-            self.transform_points = poseTransformPoints([[-0.94368,0.098388,0.18805,-1.0602],[-0.08493,0.61037,-0.74553,0.77164],[-0.1945,-0.74388,-0.58686,0.84733],[0,0,0,1]],self.point_cloud[:,0:3])
+            point_file = open(self.path+'/src/MasterMatrix.txt','rb')
+            string = point_file.read()
+            string = string.replace(',','\n')
+            vec = string.split()
+            empty_vec = []
+            for value in vec:
+                empty_vec.append(float(value))
+
+            transformation_matrix = np.array(empty_vec)
+            transformation_matrix = transformation_matrix.reshape(4,4)
+            self.transform_points = poseTransformPoints(transformation_matrix,self.point_cloud[:,0:3])
             del self.plot_point_cloud
             self.plot_point_cloud = self.env.plot3(self.transform_points,6,self.color_vector)
         except IOError, e:
@@ -84,9 +108,8 @@ class control(object):
                 vec_obj = self.obj.GetTransform()
                 vec_obj = np.array(vec_obj)
                 obj_transformation_vec = vec_obj.reshape(-1)
-                
-                
                 self.pub_obj.publish(data = obj_transformation_vec)
+                self.master.update()
         except KeyboardInterrupt,e:
             print e
         finally:
@@ -101,6 +124,24 @@ class control(object):
         T_robot = np.append(T_robot,[T_hand[3],T_hand[0],T_hand[4],T_hand[3],T_hand[1],T_hand[5],T_hand[2],T_hand[6]])
         self.robot.SetDOFValues(T_robot)
     
+    def generate_file(self):
+        self.master.button = Button(self.master, text = "Generate File for current object transformation", height =10, width=20, command = self.makefile)
+        self.master.button.pack()
+
+    def makefile(self):
+        if self.is_optimal:
+            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.is_optimal_num)+'_object_transform.txt','wb')
+        else:
+            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_object_transform.txt','wb')
+        obj_transform = self.obj.GetTransform()
+        link_transformations = self.robot.GetLinkTransformations()
+        hand_transform = link_transformations[9]
+        obj_transform = "object_transform \n"+str(obj_transform)
+        new_string  = obj_transform+"\n\nHand_Transformation\n"+str(hand_transform)
+        print new_string
+        filename.write(new_string)
+        filename.close()
+
     def updater_part(self,transform_values):
         transform = [[transform_values.data[0],transform_values.data[1],transform_values.data[2],transform_values.data[3]],[transform_values.data[4],transform_values.data[5],transform_values.data[6],transform_values.data[7]],[transform_values.data[8],transform_values.data[9],transform_values.data[10],transform_values.data[11]],[transform_values.data[12],transform_values.data[13],transform_values.data[14],transform_values.data[15]]]
 
@@ -113,6 +154,7 @@ def main():
     ctrl.sub = rospy.Subscriber("grasp_extremes", GraspSnapshot, ctrl.updater)
     ctrl.sub_trans = rospy.Subscriber("slider_for_transformation",Float32MultiArray, ctrl.updater_part)
     ctrl.sub_grasp_extremes = rospy.Subscriber("grasp_extremes",GraspSnapshot,ctrl.User_input)
+    ctrl.generate_file()
     ctrl.generate_environment()
 
 if __name__=="__main__":
