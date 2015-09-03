@@ -16,7 +16,6 @@ from Tkinter import *
 class control(object):
     def __init__(self):
         self.path = rospkg.RosPack().get_path('barrett_hand_control')
-        self.new_path = '/home/saurabh/csvfiles'
         self.flag = 0
         self.env = Environment()
         self.env.Load(self.path+'/src/barrett_wam.dae')
@@ -31,29 +30,29 @@ class control(object):
         self.grasp_set = 7
         self.extreme = 0
         self.master = Tk()
+#        self.capturing_directory = ()
         self.is_data_loaded = 0
         self.color_vector = np.array([])
         self.plot_point_cloud = None
         self.transform_points = np.array([])
         self.is_optimal = False
-        self.is_optimal_num =1 
+        self.optimal_num =1 
+        self.new_path = '/home/saurabh/csvfiles'
 
     def User_input(self,snap_shot):
         self.obj_number = snap_shot.obj_num
         self.sub_number = snap_shot.sub_num
         self.grasp_set = snap_shot.grasp_num
         self.extreme = snap_shot.extreme_num
-        try:
-            self.is_optimal = snap_shot.is_optimal
-        except:
-            pass
+        self.is_optimal = snap_shot.is_optimal
         if self.is_optimal:
-            self.is_optimal_num = snap_shot.is_optimal_num
-            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.is_optimal_num)+'_pointcloud.csv')
+            self.optimal_num = snap_shot.optimal_num
+            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.optimal_num)+'_pointcloud.csv')
         else:
-            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_pointcloud.csv')
+            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_pointcloud.csv')
 
         self.point_cloud = []
+        del self.plot_point_cloud
         try:
             with open(filename,'rb') as csvfile:
                 pointcloud = csv.reader(csvfile, delimiter=',', quotechar = '|')                                            
@@ -76,14 +75,13 @@ class control(object):
             transformation_matrix = np.array(empty_vec)
             transformation_matrix = transformation_matrix.reshape(4,4)
             self.transform_points = poseTransformPoints(transformation_matrix,self.point_cloud[:,0:3])
-            del self.plot_point_cloud
             self.plot_point_cloud = self.env.plot3(self.transform_points,6,self.color_vector)
         except IOError, e:
             print e
 
     def generate_environment(self):
         try:
-            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CrackerBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
@@ -130,15 +128,17 @@ class control(object):
 
     def makefile(self):
         if self.is_optimal:
-            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.is_optimal_num)+'_object_transform.txt','wb')
+            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.optimal_num)+'_object_transform.txt','wb')
         else:
-            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_object_transform.txt','wb')
+            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_object_transform.txt','wb')
         obj_transform = self.obj.GetTransform()
         link_transformations = self.robot.GetLinkTransformations()
         hand_transform = link_transformations[9]
         obj_transform = "object_transform \n"+str(obj_transform)
         new_string  = obj_transform+"\n\nHand_Transformation\n"+str(hand_transform)
         print new_string
+        print "written in ",filename
+        print self.is_optimal
         filename.write(new_string)
         filename.close()
 
