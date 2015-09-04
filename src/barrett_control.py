@@ -5,6 +5,7 @@ import rospy
 import numpy as np
 from std_msgs.msg import Float32MultiArray
 from grasp_manager.msg import GraspSnapshot
+from grasp_manager.srv import *
 import sys
 import rospkg
 import time
@@ -13,9 +14,12 @@ import os
 import threading
 from Tkinter import *
 
+import getpass
+system_user = getpass.getuser() 	# Contains no slashes
 
 class control(object):
     def __init__(self):
+    	global system_user
         self.path = rospkg.RosPack().get_path('barrett_hand_control')
         self.flag = 0
         self.env = Environment()
@@ -38,7 +42,8 @@ class control(object):
         self.transform_points = np.array([])
         self.is_optimal = False
         self.optimal_num =1 
-        self.new_path = '/home/saurabh/csvfiles'
+        self.new_path = '/home/' + system_user + '/csvfiles'
+	self.ptcloud_saver = rospy.ServiceProxy('save_ptcloud_csv', SaveCloud)
 
     def User_input(self,snap_shot):
         self.obj_number = snap_shot.obj_num
@@ -46,23 +51,40 @@ class control(object):
         self.grasp_set = snap_shot.grasp_num
         self.extreme = snap_shot.extreme_num
         self.is_optimal = snap_shot.is_optimal
+	
+	# Prepare for pointcloud saving by making the directory
+	csv_path = self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/'
+	self.create_path(csv_path)
         if self.is_optimal:
             self.optimal_num = snap_shot.optimal_num
-            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.optimal_num)+'_pointcloud.csv')
+            filename = (csv_path+'obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.optimal_num)+'_pointcloud.csv')
         else:
-            filename = (self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_pointcloud.csv')
+            filename = (csv_path+'obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_pointcloud.csv')
 
-        self.point_cloud = []
-        del self.plot_point_cloud
+        # Save the pointcloud via ROS
+	try:
+		rospy.loginfo("Saving snapshot pointcloud to" + filename)
+		self.ptcloud_saver(snap_shot.cloud_image, filename)
+	except rospy.ServiceException, e:
+		rospy.logerr("Pointcloud saving service call failed.")
+	
+	# Read and render
+	rospy.loginfo("Rendering cloud.")
+	self.point_cloud = []
+	try:
+        	del self.plot_point_cloud
+	except AttributeError, e:
+		rospy.logwarn("No pointcloud available to remove. This is ok if there were no pointcloud displayed.")
         try:
             with open(filename,'rb') as csvfile:
                 pointcloud = csv.reader(csvfile, delimiter=',', quotechar = '|')                                            
-                for row in pointcloud:                                                                                      
-                    row_float = []                                                                                          
-                    for value in row:                                                                                       
-                        row_float.append(float(value))                                                                      
-                    self.point_cloud.append(row_float)                                                                      
+                for row in pointcloud:
+                    row_float = []                         
+                    for value in row:
+		    	row_float.append(float(value))
+		    self.point_cloud.append(row_float)                                                                      
             self.point_cloud = np.array(self.point_cloud)
+	    print "Got cloud: ", self.point_cloud
             self.color_vector = self.point_cloud[:,3:6]
             self.color_vector = np.divide(self.color_vector,255.0)
             point_file = open(self.path+'/src/MasterMatrix.txt','rb')
@@ -76,13 +98,15 @@ class control(object):
             transformation_matrix = np.array(empty_vec)
             transformation_matrix = transformation_matrix.reshape(4,4)
             self.transform_points = poseTransformPoints(transformation_matrix,self.point_cloud[:,0:3])
+	    rospy.loginfo("Plotting.")
             self.plot_point_cloud = self.env.plot3(self.transform_points,6,self.color_vector)
+	    rospy.loginfo("End plotting.")
         except IOError, e:
             print e
 
     def generate_environment(self):
         try:
-            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/Ball.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/WineGlass.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
@@ -128,11 +152,16 @@ class control(object):
         self.master.button.pack()
 
     def makefile(self):
+	# Check that the csv directory exists, and if it doesn't, make it
+    	csv_dir = self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/'
+	self.create_path(csv_dir)
+
         if self.is_optimal:
-            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.optimal_num)+'_object_transform.txt','wb')
+            filename = open(csv_dir + 'obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_optimal'+str(self.optimal_num)+'_object_transform.txt','wb')
         else:
-            filename = open(self.new_path+'/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_pointcloud_csvfiles/obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_object_transform.txt','wb')
-        obj_transform = self.obj.GetTransform()
+            filename = open(csv_dir + 'obj'+str(self.obj_number)+'_sub'+str(self.sub_number)+'_grasp'+str(self.grasp_set)+'_extreme'+str(self.extreme)+'_object_transform.txt','wb')
+        
+	obj_transform = self.obj.GetTransform()
         link_transformations = self.robot.GetLinkTransformations()
         hand_transform = link_transformations[9]
         obj_transform = "object_transform \n"+str(obj_transform)
@@ -143,6 +172,11 @@ class control(object):
         filename.write(new_string)
         filename.close()
 
+    def create_path(self, path):
+	if not os.path.exists(path):
+		print "csv file directory does not yet exist, making directory: ", path
+		os.makedirs(path)
+
     def updater_part(self,transform_values):
         transform = [[transform_values.data[0],transform_values.data[1],transform_values.data[2],transform_values.data[3]],[transform_values.data[4],transform_values.data[5],transform_values.data[6],transform_values.data[7]],[transform_values.data[8],transform_values.data[9],transform_values.data[10],transform_values.data[11]],[transform_values.data[12],transform_values.data[13],transform_values.data[14],transform_values.data[15]]]
 
@@ -152,6 +186,8 @@ class control(object):
 def main():
     ctrl = control()
     rospy.init_node('control',anonymous = True)
+    rospy.loginfo("Waiting for pointcloud saving functionality.")
+    rospy.wait_for_service('save_ptcloud_csv')
     ctrl.sub = rospy.Subscriber("grasp_extremes", GraspSnapshot, ctrl.updater)
     ctrl.sub_trans = rospy.Subscriber("slider_for_transformation",Float32MultiArray, ctrl.updater_part)
     ctrl.sub_grasp_extremes = rospy.Subscriber("grasp_extremes",GraspSnapshot,ctrl.User_input)
