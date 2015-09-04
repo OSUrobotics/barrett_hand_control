@@ -76,19 +76,26 @@ class control(object):
             transformation_matrix = np.array(empty_vec)
             transformation_matrix = transformation_matrix.reshape(4,4)
             self.transform_points = poseTransformPoints(transformation_matrix,self.point_cloud[:,0:3])
-            self.plot_point_cloud = self.env.plot3(self.transform_points,6,self.color_vector)
+            #self.plot_point_cloud = self.env.plot3(self.transform_points,6,self.color_vector)
+            self.plot_point_cloud = 0
         except IOError, e:
             print e
 
     def generate_environment(self):
         try:
-            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/Ball.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CrackerBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
             self.Table.SetTransform([[0.0007963267271406949, -0.9999997019767761, 0.0, -0.8919000029563904], [0.9999997019767761, 0.0007963267271406949, 0.0, 0.3614000082015991], [-0.0, 0.0, 1.0, 1.0058000087738037-1.16], [0.0, 0.0, 0.0, 0.0]])
-            self.Trans_matrix = np.array([[-1.0, 3.140000104904175, -3.140000104904175, -0.71670001745224],[ 0.0, 0.0, -0.8199999928474426, -0.11140000075101852], [0.0, 0.0, 0.0, 1.0211999416351318-1.16], [0.0, 0.0, 0.0, 0.0]])
+            self.Trans_matrix = np.array([[0.99713,-0.026123,0.071081,-0.81319],[0.063927,-0.21283,-0.975,-0.1691],[0.040598,0.97674,-0.21055,-0.10489],[0,0,0,1]])
+            print self.Trans_matrix
+            transposed_rotation_matrix = np.transpose(self.Trans_matrix[0:3,0:3])
+            col_vector = self.Trans_matrix[:,-1].reshape(4,1)
+            self.Trans_matrix = np.append(transposed_rotation_matrix, [self.Trans_matrix[-1,0:3]],axis = 0)
+            self.Trans_matrix = np.append(self.Trans_matrix, col_vector, axis=1)
             self.obj.SetTransform(self.Trans_matrix)
+            print self.Trans_matrix
             self.env.Remove(self.Table)
             while not rospy.is_shutdown():
                 hand_transformation_vec = []
