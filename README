@@ -2,33 +2,12 @@ This package contains simulation of the barrett arm and barrett hand.
 
 If you want to align manually.
 
-Create a directory /home/(user)/csvfiles
-
-copy make_dir.py from barrett_hand_control in /home/(user)/csvfiles (this file creates a directory in proper format taking input object number and subject number)
-
-
-
-Run:
-1) roscore
-2) rosrun grasp_manager replay_extraction ( enter object number and subject number )
-3) Go to csvfiles directory and run: python make_dir.py. Enter same object number and subject number
-4) Now go to newly created directory and run: rosrun grasp_manager pointcloud_saver
-5) close everything
-
-
-Now open barrett_control.py in vim and use :%s/saurabh/(your PC-username)/g
-
 Now you are good to go
-
 you have to do the following for manually aligning
 1) roscore
-2) rosrun grasp_manager replay_extraction
-3) rosrun rviz rviz (use the grasp_rgb image )
-4) rosrun barrett_hand_control barrett_control
+2) roslaunch barrett_hand_control manual_alignment.launch
 5) rosrun barrett_hand_control transform_object (if needed. Note: if you run this in middle of aligning process then the object will be shifted somewhere else)
 6) Align the part in the scene
 7) Open a libreoffice file and add the coloumns : object number, subject number, Grasp set number, extreme or optimal, extreme or optimal number, F1 tip, F2 tip, F3 tip, F1 Pad, F2 Pad, F3 Pad, F1 Joint, F2 Joint, F3 Joint, contact on palm, where is the grasp on object ( Note: from column 6 to 15 use 1 if in contact and 0 if not in contact.
 8) for saving the transformation of hand and object, click on the window which opens with barrett_control
 9) Press enter on the replay_extraction terminal and proceed.
-
-

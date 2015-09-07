@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- The data provider -->
+	<node pkg="grasp_manager" type="replay_extraction.py" name="scene_replay" launch-prefix="gnome-terminal -e" />
+
+	<!-- The data refiner -->
+	<!--<node pkg="barrett_hand_control" type="bag_refiner.py" name="bag_refiner" />-->
+
+	<!-- The actual simulation tool -->
+	<node pkg="barrett_hand_control" type="barrett_control.py" name="barrett_control" output="screen"/>
+
+	<!-- To save pointclouds -->
+	<node pkg="grasp_manager" type="pointcloud_saver" name="pointcloud_saver" output="screen"/>
+
+	<!-- An extra visualization tool -->
+	<node pkg="rviz" type="rviz" name="rviz" />
+</launch>
