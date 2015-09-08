@@ -24,7 +24,7 @@ class object_visualizer(object):
         self.hand_2_mat = np.array(self.hand_2.GetLinkTransformations())
         self.part_mat = np.array(self.obj.GetTransform())
         self.hand_2.SetVisible(0)
-        self.obj.SetVisible(0)
+        self.obj.SetVisible(1)
 
     def Switch_transform(self,transform_1,transform_2):
         print type(transform_2)
@@ -35,11 +35,7 @@ class object_visualizer(object):
             print ""
             temp_matrix = np.dot(np.linalg.inv(transform_1[i]),transform_2)
             print temp_matrix
-            print ""
-            temp_matrix = np.dot(temp_matrix,np.eye(4))
-            print "temp matrix",temp_matrix
-            print ""
-            return_vec.append([return_vec],[temp_matrix])
+            return_vec.append(temp_matrix)
             print return_vec
         return return_vec
 
@@ -62,7 +58,7 @@ class object_visualizer(object):
         try:
             while not rospy.is_shutdown():
                 hand_wrt_obj = self.Switch_transform(self.hand_1_mat,self.part_mat)
-                print len(hand_wrt_obj)
+                hand_wrt_obj = np.array(hand_wrt_obj)
                 self.hand_1.SetLinkTransformations(hand_wrt_obj)
                 if self.flag==True:
                     self.hand_2.SetLinkTransformations(hand_wrt_obj)
