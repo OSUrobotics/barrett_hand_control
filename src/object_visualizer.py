@@ -33,9 +33,6 @@ class object_visualizer(object):
         print type(obj_mat)
         print type(link_mats[1])
         return_vec =[]
-
-
-
         for i in range(len(link_mats)):
             print "Link ", i, " matrix: ", link_mats[i], "\n"
             new_link_matrix = np.dot(mat_to_apply, link_mats[i])
@@ -138,9 +135,6 @@ def main():
 			rospy.loginfo("Showing " + f)
 			T_hand, T_obj = get_transforms(f)
 			ctrl.reorient_hand(T_hand, T_obj)
-
-def reorient_stl(mesh_path):
-	
 
 if __name__=="__main__":
     main()
