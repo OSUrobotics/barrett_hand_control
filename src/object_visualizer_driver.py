@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from object_visualizer import *
+from std_msgs.msg import Int32MultiArray
 
 transform_path = os.path.expanduser("~") + "/grasp_transforms"
 ctrl = None
@@ -11,9 +12,10 @@ def view_alignment_cb(msg):
 	grasp_num = msg.data[2]
 	idx = msg.data[3]
 
-	f_name = "obj" + str(obj_num) + "_sub" + str(sub_num) + "_grasp" + str(grasp_num) + "_extreme" + str(idx)
+	f_name = "obj" + str(obj_num) + "_sub" + str(sub_num) + "_grasp" + str(grasp_num) + "_extreme" + str(idx) + "_object_transform.txt"
 	f_path = transform_path + "/" + f_name
-	T_hand, T_obj = get_transforms(f)
+	T_hand, T_obj = get_transforms(f_path)
+	ctrl.set_obj(obj_num)
 	ctrl.reorient_hand(T_hand, T_obj)
 
 
