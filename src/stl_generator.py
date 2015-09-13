@@ -6,6 +6,7 @@ import numpy as np
 import csv
 from stlwriter import *
 import os
+from stl import mesh
 
 import rospkg
 
@@ -36,40 +37,26 @@ class stl_generator():
 	self.robot.SetDOFValues(T_robot)
 
     def generate_stl(self, stl_out_path):
-    	self.links = self.robot.GetLinks()
-    	all_vertices = []
-    	all_faces = []
-    	ind = 0
-    	for link in self.links:
-		vertices = link.GetCollisionData().vertices
-		faces = link.GetCollisionData().indices
-		if ind == 0:
-		    faces = np.add(faces,ind)
-		else:
-		    faces = np.add(faces,ind+1)
-		try:
-		    ind = faces[-1][-1]
-		except:
-		    pass
+        if os.path.exists(stl_out_path):
+		rospy.loginfo("STL already exists: " + stl_out_path)
+		return
+	all_vertices, all_faces = get_robot_points(self.robot)
 	
-		link_pose = poseFromMatrix(link.GetTransform())
-		transform_vertices = poseTransformPoints(link_pose, vertices)
-		all_vertices.extend(transform_vertices.tolist())
-		all_faces.extend(faces.tolist())
-
 	self.vertices = numpy.array(all_vertices)
 	self.indices = numpy.array(all_faces)
-    #pt_handles = self.env.plot3(self.vertices,4)
-    #filename = open('obj6_sub7_grasp6.csv','wb')
-    #writer = csv.writer(filename, delimiter=',')
-    #writer.writerow(['x','y','z'])
-    #for row in self.vertices:
-    #    writer.writerow(row)
-    #filename.close()
-    #print "Destination dir: ", stl_out_path 
-    #raw_input("How does the robot look? Does it match the pictures?")
 
 	self.write_stl(stl_out_path)
+
+	# Now try reading the same stl
+	#robo_mesh = mesh.Mesh.from_file(stl_out_path)
+	#print "Num stl vertices: ", len(robo_mesh.points)
+	#print "Num vertices in trimesh: ", len(self.vertices)
+	#print "first couple of trimesh points: ", self.vertices[0:6]
+	#print "first couple of stl points: ", robo_mesh.points[0:6]
+	#self.a = self.env.plot3(self.vertices[336576], 6)
+	#self.b = self.env.plot3(self.vertices[403995], 6)
+	#self.c = self.env.plot3(self.vertices[400798], 20)
+	#raw_input("How do those numbers compare?")
 
     def write_stl(self, stl_out_path):
         faces_points = []
@@ -80,6 +67,33 @@ class stl_generator():
             writer= Binary_STL_Writer(fp)
             writer.add_faces(faces_points)
             writer.close()
+
+def get_robot_points(robot):
+	links = robot.GetLinks()
+	all_vertices = []
+    	all_faces = []
+    	ind = 0
+	for link in links:
+		vertices = link.GetCollisionData().vertices
+		faces = link.GetCollisionData().indices
+		if ind == 0:
+		    faces = np.add(faces,ind)
+		else:
+		    faces = np.add(faces,ind+1)
+		try:
+		    ind = faces[-1][-1]
+		except:
+		    pass
+		
+
+		#print "link: ", link, "\nStarting index for this link: ", len(all_vertices)
+		link_pose = poseFromMatrix(link.GetTransform())
+		transform_vertices = poseTransformPoints(link_pose, vertices)
+		all_vertices.extend(transform_vertices.tolist())
+		all_faces.extend(faces.tolist())
+	
+	return all_vertices, all_faces
+
 
 def write_stls(grasp_data_directory, stl_generator):
 	global stl_dest_dir

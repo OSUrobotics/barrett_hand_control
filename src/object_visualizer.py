@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 import threading
 from openravepy import *
 import rospy
@@ -9,7 +9,6 @@ import rospkg
 import time
 import os
 import string
-import mdp
 import math
 from openravepy.examples import tutorial_grasptransform
 
@@ -50,7 +49,30 @@ class object_visualizer(object):
 	
 	rospy.loginfo("Loaded " + grasp_obj_dict[obj_num][0])
 
-    def reorient_hand(self, T_palm, T_obj):
+    def set_hand_joints(self,jnt_dict):
+    	hand_jnts = self.hand_1.GetJoints()
+	out_dof = self.hand_1.GetDOFValues()
+	for j in hand_jnts:
+		dof_idx = j.GetDOFIndex()
+		n = j.GetName()
+		if ("1" in n or "2" in n) and "prox" in n:
+			out_dof[dof_idx] = jnt_dict['spread']
+		elif "1" in n and "med" in n:
+			out_dof[dof_idx] = jnt_dict['inner_f1']
+		elif "1" in n and "dist" in n:
+			out_dof[dof_idx] = jnt_dict['outer_f1']
+		elif "2" in n and "med" in n:
+			out_dof[dof_idx] = jnt_dict['inner_f2']
+		elif "2" in n and "dist" in n:
+			out_dof[dof_idx] = jnt_dict['outer_f2']
+		elif "3" in n and "med" in n:
+			out_dof[dof_idx] = jnt_dict['inner_f3']
+		elif "3" in n and "dist" in n:
+			out_dof[dof_idx] = jnt_dict['outer_f3']
+
+	self.hand_1.SetDOFValues(out_dof)
+
+    def reorient_hand(self, T_palm, T_obj, use_joint_angles="False"):
 	self.obj.SetVisible(1)
 	hand_to_obj = np.dot(np.linalg.inv(T_obj), T_palm)
 
@@ -58,11 +80,20 @@ class object_visualizer(object):
 
 	self.standard_axes = self.gt.drawTransform(np.eye(4))
 	self.recenter_from_stl()
-	self.standardize_axes()
+	if self.obj_num == 17:
+		self.standardize_ball()
+	elif self.obj_num == 5 or self.obj_num == 6:
+		self.standardize_box()
+	elif self.obj_num == 15:
+		# The chunk of foam requires a little manual flipping due to its cylindrical top-down symmetry
+		self.standardize_foam()
+	else:
+		self.standardize_axes()
+
 	palm_pt = self.get_palm_point()
 	self.palm_plot = self.env.plot3(palm_pt, 10)
-	print "Final palm point: ", palm_pt[0], "\t", palm_pt[1], "\t", palm_pt[2]
-	raw_input("Finished reorientation. How are we doing?")
+	#print "Final palm point: ", palm_pt[0], "\t", palm_pt[1], "\t", palm_pt[2]
+	#raw_input("Finished reorientation. How are we doing?")
 
    
     # Recenters the robot hand relative to
@@ -89,14 +120,6 @@ class object_visualizer(object):
 		rospy.loginfo("No axis standardization necessary.")
 		return
 	
-	# Ensure that the grasp is pointing toward the principle component
-	#p = mdp.nodes.PCANode(output_dim=3)
-	#p.train(self.get_obj_points())
-	#y = mdp.pca(self.get_obj_points())
-	#print "pca results: ", dir(p)
-	#print "pca y: ", p.get_recmatrix()
-	#self.plot_h = self.env.plot3(p.get_recmatrix(),6)
-
 	palm_pt = self.get_palm_point()
 	palm_approach = [0,0,1] # Here is the palm's direction in its own corrdinate frame
 	palm_approach = poseTransformPoints(poseFromMatrix(self.hand_1.GetTransform()), [palm_approach])[0]
@@ -107,7 +130,7 @@ class object_visualizer(object):
 		rospy.loginfo("Angles too close to consider. Probably dont need to realign.")
 		return
 	#print "angle: ", angle
-	if angle > (math.pi/3) and angle < (2*math.pi/3):
+	if angle > (math.pi/6) and angle < (2*math.pi/3):
 		pass
 	else:
 		rospy.loginfo("Approach is not along the rotational axis. Skipping.")
@@ -125,6 +148,42 @@ class object_visualizer(object):
 	# Reorient things...
 	self.apply_scene_transform(standardize_mat)
 	rospy.loginfo("Axes standardized.")
+
+    # The ball gets a special procedure because some optimization can be made.
+    def standardize_ball(self):
+    	palm_pt = self.get_palm_point()
+    	axis = np.cross([1,0,0], palm_pt)
+	angle = -get_angle([1,0,0], palm_pt)
+	standardize_mat = matrixFromAxisAngle(axis, angle)
+	self.apply_scene_transform(standardize_mat)
+
+    def standardize_box(self):
+    	while True:
+		user_input = raw_input("Name the axes to rotate around: (x)(xy)(...): ")
+		user_input = user_input.strip().lower()
+		standardize_mat = np.eye(4)
+		if "x" in user_input:
+			standardize_mat = np.dot(matrixFromAxisAngle([1,0,0], math.pi), standardize_mat)
+		if "y" in user_input:
+			standardize_mat = np.dot(matrixFromAxisAngle([0,1,0], math.pi), standardize_mat)
+		if "z" in user_input:
+			standardize_mat = np.dot(matrixFromAxisAngle([0,0,1], math.pi), standardize_mat)
+
+		self.apply_link_transform(standardize_mat, self.hand_1)
+
+		if "n" in user_input or user_input == "":
+			break
+
+    def standardize_foam(self):
+    	self.standardize_axes()
+	palm_approach = [0,0,1] # Here is the palm's direction in its own corrdinate frame
+	palm_approach = poseTransformPoints(poseFromMatrix(self.hand_1.GetTransform()), [palm_approach])[0]
+	angle = get_angle([0,1,0], palm_approach)
+	palm_pt = self.get_palm_point()
+	if (angle < math.pi/6 or angle > 5 * math.pi / 6) and palm_pt[1] < 0:
+		standardize_mat = matrixFromAxisAngle([1,0,0], math.pi)
+		self.apply_link_transform(standardize_mat, self.hand_1)
+		#raw_input("Flipped the hand around the x axis.")
 
     def apply_scene_transform(self, T):
     	self.apply_link_transform(T, self.hand_1)
@@ -158,6 +217,7 @@ class object_visualizer(object):
 	obj_pose = poseFromMatrix(self.obj.GetTransform())
 
 	return  poseTransformPoints(obj_pose, obj_pts)
+
 
 # Returns the angular difference between the vectors in radians
 def get_angle(v1, v2):
@@ -212,25 +272,4 @@ def get_list_from_str(in_str):
 			l.append(float(n))
 	return l
 
-def main():
-    ctrl = object_visualizer()
-    rospy.init_node('object_visualizer',anonymous = True)
-    while not rospy.is_shutdown():
-    	obj_num = int(raw_input("Obj num: "))
-	sub_num = int(raw_input("Sub num: "))
 
-	#transform_path = "/media/eva/FA648F24648EE2AD" + "/csvfiles/obj" + str(obj_num) + "_sub" + str(sub_num) + "_pointcloud_csvfiles"
-	#transform_path = os.path.expanduser("~") + "/csvfiles/obj" + str(obj_num) + "_sub" + str(sub_num) + "_pointcloud_csvfiles"
-	transform_path = os.path.expanduser("~") + "/grasp_transforms"
-	files = os.listdir(transform_path)
-	files = sorted(files)
-	ctrl.set_obj(obj_num)
-	for f in files:
-		f = transform_path + "/" + f
-		if ("obj" + str(obj_num)) in f and "object_transform" in f:
-			rospy.loginfo("Showing " + f)
-			T_hand, T_obj = get_transforms(f)
-			ctrl.reorient_hand(T_hand, T_obj)
-
-if __name__=="__main__":
-    main()
