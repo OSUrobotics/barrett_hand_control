@@ -35,7 +35,6 @@ class control(object):
         self.grasp_set = 7
         self.extreme = 0
         self.master = Tk()
-#        self.capturing_directory = ()
         self.is_data_loaded = 0
         self.color_vector = np.array([])
         self.plot_point_cloud = None
@@ -106,7 +105,7 @@ class control(object):
 
     def generate_environment(self):
         try:
-            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/WineGlass.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
