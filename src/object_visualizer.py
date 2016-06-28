@@ -20,7 +20,7 @@ class object_visualizer(object):
 	self.stl_path = self.path + "/src/stl_files"
         self.env = Environment()
 	self.obj_num = 15
-        self.env.Load(self.stl_path + '/Chunk_of_foam.STL',{'scalegeometry':'0.001 0.001 0.001'})
+        self.env.Load(self.stl_path + '/Chunk_of_foam.STL',{'scalegeometry':'1 1 1'})
         self.env.SetViewer('qtcoin')
         self.obj = self.env.GetBodies()[0]
         error_1 = self.env.Load(self.path+'/src/bhand.dae')

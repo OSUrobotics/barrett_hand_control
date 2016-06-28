@@ -27,7 +27,7 @@ class control(object):
             self.robot.SetDOFValues([0.81366723775863636, -1.5860003709793091, 2.0457030773162836, 1.2624661684036254, -0.89291913509368837, 0.62145200967788694, 2.4271213531494147, 3.1086244689504381e-16, 3.1086244689504381e-16, 0.015690432861447334, 1.4682650566101076, 0.48958203792572014, 0.015690432861447424, 1.4379965782165527, 0.47997848391532927, 1.3054973840713502, 0.53829675912857122])
             self.env.Add(self.hand)
             self.env.Add(self.wam)
-            self.obj = self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj = self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'1 1 1'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
