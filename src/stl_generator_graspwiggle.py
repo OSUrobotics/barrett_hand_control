@@ -10,7 +10,7 @@ from get_matrix import *
 
 from grasp_manager.shared_playback import *
 stl_dest_dir = os.path.expanduser('~') + '/matts_stls'
-palm_offset_to_origin = 0.177 #m between base of hand and origin of world
+palm_offset_to_origin = 0.077 #m between base of hand and origin of world
 
 def offset(pt):
     global palm_offset_to_origin
@@ -20,26 +20,39 @@ def offset(pt):
 def get_robot_points(robot):
     # Get the hand links
     links = [l for l in robot.GetLinks() if 'bhand' in l.GetName()]
+    #robot.SetTransformWithDOFValues(matrixFromPose(invertPoses([poseFromMatrix(links[0].GetTransform())])[0]), robot.GetDOFValues())
+    #base_transform = links[0].GetTransformPose()
+    #base_transform[:4] = quatInverse(base_transform)
+    #base_transform[4:] = base_transform[4:] * -1
+    #print "base_transform: ", base_transform
     all_vertices = []
     all_faces = []
     ind = 0
     for link in links:
         vertices = link.GetCollisionData().vertices
         faces = link.GetCollisionData().indices
+        print "faces: ", len(faces), " vertices: ", len(vertices)
         if ind == 0:
             faces = np.add(faces,ind)
         else:
             faces = np.add(faces,ind+1)
-            try:
-                ind = faces[-1][-1]
-            except:
-                pass
-        print "link: ", link, "\nStarting index for this link: ", len(all_vertices)
+        
+        try:
+            ind = faces[-1][-1]
+        except:
+            pass
+        #print "link: ", link, "\nStarting index for this link: ", len(all_vertices)
         link_pose = poseFromMatrix(link.GetTransform())
+        print "link_pose: ", link_pose
+        #p = poseMult(base_transform, link_pose)
+        #p[4:] = link_pose[4:] + base_transform[4:]
+        #print "p: ", p
         transform_vertices = poseTransformPoints(link_pose, vertices)
-        transform_vertices = map(offset, transform_vertices)
+        #transform_vertices = map(offset, transform_vertices)
+
         all_vertices.extend(transform_vertices)
         all_faces.extend(faces.tolist())
+        #print "all_vertices len: ", len(all_vertices), " all_faces len: ", len(all_faces)
 
     #print "all_vertices: ", all_vertices
     return all_vertices, all_faces
@@ -78,7 +91,9 @@ def write_stls(grasp_data_directory, stl_generator):
             stl_path += ".stl"
 
             rospy.loginfo("Saving stl " + stl_path)
-            stl_generator.set_joints(msg.hand_joints.position, msg.wam_joints.position)
+            stl_generator.set_joints(msg.hand_joints.position)
+            #print "hand joints: ", msg.hand_joints
+            #stl_generator.robot.SetDOFValues(np.array([0,0] + list(msg.hand_joints.position)))
             stl_generator.generate_stl(stl_path)
             stl_file_list.append(stl_path)
             write_transform(stl_path)
@@ -95,7 +110,7 @@ def write_transform(transform_dest_path):
         rospy.logerr("No transform found. FIX THIS.")
         return
     print "hand_mat: ", m['hand_matrix'], "obj_mat: ", m['obj_matrix']
-    hto = np.array(m['hand_matrix']) * np.array(m['obj_matrix'])
+    hto = np.linalg.inv(np.array(m['hand_matrix'])) * np.array(m['obj_matrix'])
     with open(transform_dest_path, 'w') as f:
         for i in range(4):
             f.write("%s, %s, %s, %s\n" % (str(hto[i][0]), str(hto[i][1]), str(hto[i][2]), str(hto[i][3])))

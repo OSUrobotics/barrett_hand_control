@@ -12,20 +12,20 @@ class stl_generator():
     def __init__(self, get_robot_points):
         self.env = Environment()
         self.get_robot_points = get_robot_points
-        #self.viewer = self.env.SetViewer('qtcoin')
+        self.viewer = self.env.SetViewer('qtcoin')
         bhc_path = rospkg.RosPack().get_path('barrett_hand_control')
-        robot_path = bhc_path + '/src/barrett_wam.dae'
+        robot_path = bhc_path + '/src/bhand.dae'
         self.env.Load(robot_path)
         self.robot = self.env.GetRobots()[0]
-        self.robot.SetTransform([[1,0,0,0],[0,1,0,0],[0,0,1,-1.16],[0,0,0,1]])
+        self.robot.SetTransform([[1,0,0,0],[0,1,0,0],[0,0,1,-0.09],[0,0,0,1]])
         self.vertices = np.array([])
         self.indices = np.array([])
         self.links = self.robot.GetLinks()
+        print "DOF: ", self.robot.GetDOFValues()
 
-    def set_joints(self, hand_joints, wam_joints):
+    def set_joints(self, hand_joints):
         T_hand = np.array(hand_joints)
-        T_wam = np.array(wam_joints)
-        T_robot = T_wam[0:7]
+        T_robot = np.array([])
         T_robot = np.append(T_robot,[0,0])
         T_robot = np.append(T_robot,[T_hand[3],T_hand[0],T_hand[4],T_hand[3],T_hand[1],T_hand[5],T_hand[2],T_hand[6]])
         self.robot.SetDOFValues(T_robot)
@@ -54,8 +54,8 @@ class stl_generator():
 
     def write_stl(self, stl_out_path):
         faces_points = []
-        #print "self.indices: ", self.indices
-        #print "self.vertices: ", self.vertices
+        print "self.indices: ", len(self.indices)
+        print "self.vertices: ", len(self.vertices)
         for vec in self.indices:
             faces_points.append([self.vertices[vec[0]],self.vertices[vec[1]],self.vertices[vec[2]]])
 
