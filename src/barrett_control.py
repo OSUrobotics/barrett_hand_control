@@ -105,7 +105,7 @@ class control(object):
 
     def generate_environment(self):
         try:
-            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'1 1 1'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
