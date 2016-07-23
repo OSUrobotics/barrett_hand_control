@@ -17,7 +17,7 @@ class stl_generator():
         robot_path = bhc_path + '/src/bhand.dae'
         self.env.Load(robot_path)
         self.robot = self.env.GetRobots()[0]
-        self.robot.SetTransform([[1,0,0,0],[0,1,0,0],[0,0,1,-0.09],[0,0,0,1]])
+        self.robot.SetTransform([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
         self.vertices = np.array([])
         self.indices = np.array([])
         self.links = self.robot.GetLinks()

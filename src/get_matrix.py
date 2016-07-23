@@ -16,7 +16,7 @@ def get_hand_matrix(transform):
     string_1 = transform[0][2:-2]
     string_2 = transform[1][2:-2]
     string_3 = transform[2][2:-2]
-    string_4 = transform[3][2:-2]
+    string_4 = transform[3][2:-3]
     all_combined = [string_1,string_2,string_3,string_4]
     all_int_values = []
     for row in all_combined:

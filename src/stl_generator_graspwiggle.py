@@ -10,12 +10,6 @@ from get_matrix import *
 
 from grasp_manager.shared_playback import *
 stl_dest_dir = os.path.expanduser('~') + '/matts_stls'
-palm_offset_to_origin = 0.077 #m between base of hand and origin of world
-
-def offset(pt):
-    global palm_offset_to_origin
-    pt[2] = pt[2] - palm_offset_to_origin
-    return pt
 
 def get_robot_points(robot):
     # Get the hand links
@@ -48,7 +42,6 @@ def get_robot_points(robot):
         #p[4:] = link_pose[4:] + base_transform[4:]
         #print "p: ", p
         transform_vertices = poseTransformPoints(link_pose, vertices)
-        #transform_vertices = map(offset, transform_vertices)
 
         all_vertices.extend(transform_vertices)
         all_faces.extend(faces.tolist())
