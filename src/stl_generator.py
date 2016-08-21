@@ -6,7 +6,7 @@ import numpy as np
 import csv
 from stlwriter import *
 import os
-from stl import mesh
+#from stl import mesh
 
 import rospkg
 

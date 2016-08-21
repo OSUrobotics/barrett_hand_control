@@ -4,8 +4,8 @@ from openravepy import *
 import rospy
 import numpy as np
 from std_msgs.msg import Float32MultiArray
-from grasp_manager.msg import GraspSnapshot
-from grasp_manager.srv import *
+from grasp_data_msgs.msg import GraspSnapshot
+from grasp_data_msgs.srv import *
 import sys
 import rospkg
 import time
@@ -30,7 +30,7 @@ class control(object):
         self.pub = rospy.Publisher('hand_transformation', Float32MultiArray,queue_size = 1)
         self.pub_obj = rospy.Publisher('obj_transformation',Float32MultiArray,queue_size = 1)
         self.point_cloud = np.array([])
-        self.obj_number = 6
+        self.obj_number = 13
         self.sub_number = 7
         self.grasp_set = 7
         self.extreme = 0
@@ -105,7 +105,7 @@ class control(object):
 
     def generate_environment(self):
         try:
-            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/CerealBox.STL',{'scalegeometry':'0.001 0.001 0.001'})
+            self.obj =self.env.ReadKinBodyXMLFile(self.path+'/src/stl_files/SoapDispenser.STL',{'scalegeometry':'0.001 0.001 0.001'})
             self.env.Add(self.obj)
             self.Table = self.env.ReadKinBodyXMLFile('data/table.kinbody.xml')
             self.env.Add(self.Table)
